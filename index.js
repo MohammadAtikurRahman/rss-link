@@ -1,15 +1,14 @@
 // index.js
 import express from "express";
-import resolveRouter from "./route.js";
+import router from "./route.js";
 
 const app = express();
 
 app.use(express.json());
 
-// সব resolve সম্পর্কিত route এখানে মাউন্ট
-app.use("/resolve", resolveRouter);
+// সব route এখন root এ, যেমন /resolve, /search
+app.use("/", router);
 
-// অপশনাল health check
 app.get("/", (req, res) => {
   res.json({ status: "ok", message: "Google News Resolver API" });
 });
