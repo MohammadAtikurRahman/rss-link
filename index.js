@@ -1,23 +1,130 @@
-import axios from "axios";
+import puppeteer from "puppeteer";
 
-const googleNewsUrl =
-  "https://news.google.com/rss/articles/CBMingZBVV95cUxOTVZJamRQX0duZ2ExanV4ZEV2VjZaVHVCRDBudzFVazQzbmYwODM0Y29VZlpBS01UY2szTHBDUTcwaWtheTZUdnZiWjI1QXlsVlFUSHowNGtNaWkxdnpBOE9QRUd5ckVMNFdvZ3VDZi1DREo1N2pydWJ1ZTVJN3B4TEtya01nRWFqR2EtNlJkUTNhTWRVdmt0OFN0TGk5WGxneUh4Y1NOTElwTjVIazNpZVFVQmlNeERfd0VTNllhd0tlT21OcWVtcUNJaVJ3Q1RXeDRyaFJtTDdXdHlkeGN6RUwySE1VOTlReEp2NEp3enpid1NuWHFOYmVDMllBQzRVdWpCMVZDZGZ6aXV6MkJCYnMzWS1mNDM3R0hpV1FhVl9fZE1VZkhycnRmZTFhNXdsQUgwZHl6Q2JISFE2YV9OSVZUZnNNdjBacnRTS3VBZG1NTHJCZE1CT0hkd3VFQXgyOVVmSkFNbnBfVlUwYllQZDVvbUJCRElRWlVCbVNVNkRtMl9WY0xsZzNqcHlleWJnRWZ4bHh4NG94S0hQN1RkX2I4RW5LUnhBRXV3Z1FpMC1pSC1aZVJIVFlDajlFcWJGbHFSUE9RS3FQeGNaUVRaaG9vSlBTV2xUUWh3TDQ2bDEyWUFlSzdqSWg1UkNfU1ZZVWRQYnlORmZMNmM3SHFPS0hITHFHRmhoSVhYenFKUHVaTFdWLWlKOHdnMmFfeTVIRHhIaTFiWk5wM05UUWxKR29UWlcxRE9pdWsyQVhtTWxMcDFpNVdWRXRER1Zpek82UG01LVNrZXlaM1VlZ3VzSloxblktQTh0Zi1Wa0xGa21nWXdqVVRtUVJlbElTb0lzdDBHZklzR2Q3M0dmaTM4NlA1eW9PTEVrZFJJWEVsY0ZSZWp6T1ZIcWZ4VTUxNGk4ZS1iU2N4S1FCQUZMZTQ3WE1iT2RXMG9RV3I4YmF6cU1tY1NVSGw5N1h2aEl0NmRZNUwxcjhvX01BUjJDN2pXLWg4UVpUT05OX3pMMTh5eTJuZnpmY0IwM2h3cDVJZ2hHR0FTendwOUg2cklXbkE?oc=5";
+// এখানে চাইলে তুমি নিজের Google News URL default হিসেবে বসাতে পারো
+const DEFAULT_GOOGLE_NEWS_URL ="https://news.google.com/rss/articles/CBMilgFBVV95cUxQTWpEMDRMWHpnWVlMLXlTOXlwODdvUnJqOGYtT25sVXRjdlA3UklidURqbVJST1JPbmFPbXk1UEx3d0FDbzdURHlmN0JrYVhjalZnMFdzUHdpbUF0THJJbC1HQl9OYUlXNm4zUmx0OF84Um95aEFUQ0QzUWFjTVVUV3o4M0FFeU80YWtScVFLMEx2b2tWV3c?oc=5"
 
-(async () => {
+// কোন কোন host কে ignore করব (এগুলো হলে এগুলোকে article ধরি না)
+const BLOCKED_HOSTS = [
+  "google.com",
+  "news.google.com",
+  "www.google.com",
+  "gstatic.com",
+  "cloudflare.com",
+  "www.cloudflare.com",
+  "challenges.cloudflare.com"
+];
+
+function isBlockedUrl(urlString) {
   try {
-    // Try request but prevent following redirects
-    const response = await axios.get(googleNewsUrl, {
-      maxRedirects: 0,
-      validateStatus: (status) => status >= 200 && status < 400,
+    const u = new URL(urlString);
+    return BLOCKED_HOSTS.some(
+      (h) => u.hostname === h || u.hostname.endsWith("." + h)
+    );
+  } catch {
+    return true;
+  }
+}
+
+// main IIFE
+(async () => {
+  const targetUrl = process.argv[2] || DEFAULT_GOOGLE_NEWS_URL;
+
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"]
+  });
+
+  try {
+    const page = await browser.newPage();
+
+    await page.setUserAgent(
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    );
+
+    await page.goto(targetUrl, {
+      waitUntil: "networkidle2",
+      timeout: 30000
     });
 
-    // If no redirect occurred (rare)
-    console.log("✅ No redirect, URL:", response.request.res.responseUrl);
-  } catch (err) {
-    if (err.response?.headers?.location) {
-      console.log("✅ Original Link:", err.response.headers.location);
-    } else {
-      console.error("❌ Error:", err.message);
+    // JS redirect / iframe load হওয়ার জন্য একটু সময়
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    const currentUrl = page.url();
+
+    // 1) যদি সরাসরি non-google/non-cloudflare domain এ redirect হয়ে যায় → এইটাই article
+    if (!isBlockedUrl(currentUrl)) {
+      console.log(currentUrl);
+      return;
     }
+
+    // 2) নাহলে DOM থেকে canonical/iframe/anchor দেখে external URL বের করি
+    const originalUrl = await page.evaluate(() => {
+      const blockedHosts = [
+        "google.com",
+        "news.google.com",
+        "www.google.com",
+        "gstatic.com",
+        "cloudflare.com",
+        "www.cloudflare.com",
+        "challenges.cloudflare.com"
+      ];
+
+      const isRealArticle = (url) => {
+        try {
+          const u = new URL(url);
+          return !blockedHosts.some(
+            (h) => u.hostname === h || u.hostname.endsWith("." + h)
+          );
+        } catch {
+          return false;
+        }
+      };
+
+      const candidates = [];
+
+      // 1) canonical
+      const canonical = document.querySelector('link[rel="canonical"]');
+      if (canonical && canonical.href) {
+        candidates.push(canonical.href);
+      }
+
+      // 2) og:url meta tags
+      const ogMeta = document.querySelector('meta[property="og:url"], meta[name="og:url"]');
+      if (ogMeta && (ogMeta.content || ogMeta.getAttribute("content"))) {
+        candidates.push(ogMeta.content || ogMeta.getAttribute("content"));
+      }
+
+      // 3) সব iframe src
+      const iframes = Array.from(document.querySelectorAll("iframe[src]"));
+      for (const f of iframes) {
+        candidates.push(f.src);
+      }
+
+      // 4) সব anchor href
+      const anchors = Array.from(document.querySelectorAll('a[href^="http"]'));
+      for (const a of anchors) {
+        candidates.push(a.href);
+      }
+
+      const unique = [...new Set(candidates)];
+
+      const found = unique.find((u) => isRealArticle(u));
+      return found || null;
+    });
+
+    if (originalUrl && !isBlockedUrl(originalUrl)) {
+      // ✅ শুধু article URL print
+      console.log(originalUrl);
+    } else {
+      // আর কিছু পাওয়া না গেলে, যতটুকু পারি করি:
+      // যদি currentUrl article না হয়, তবে error
+      console.error(
+        "Could not detect external article URL (only Google/Cloudflare or no external link found)."
+      );
+    }
+  } catch (err) {
+    console.error("Error:", err.message);
+  } finally {
+    await browser.close();
   }
 })();
