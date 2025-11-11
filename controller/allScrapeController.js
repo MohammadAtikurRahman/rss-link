@@ -487,15 +487,13 @@ export async function allScrapeController(req, res) {
 
     // 4) save combined file
 
-    const targetDir = outDir || path.join(process.cwd(), "data");
-    ensureDir(targetDir);
+  const targetDir = outDir || path.join(process.cwd(), "data");
+ensureDir(targetDir);
 
-    const defaultNameParts = [query];
-    if (fromY && toY) defaultNameParts.push(`${fromY}-${toY}`);
-    const defaultName = defaultNameParts.join("-");
+const givenName = name || "all-scrape";
+const fileStem = safeFileName(givenName);
+const outPath = path.join(targetDir, `${fileStem}.json`);
 
-    const fileStem = safeFileName(name || defaultName || "all-scrape");
-    const outPath = path.join(targetDir, `${fileStem}.json`);
 
     const doc = {
       query,
