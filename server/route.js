@@ -13,9 +13,9 @@ const router = Router();
 router.post("/resolve", resolveArticleController);
 router.post("/search", searchController);
 router.post("/resolved-search", resolvedSearchController);
-router.post("/scrape", scrapeController);
 
-// NEW: all-scrape API
+// NEW: scrape API
+router.post("/scrape", scrapeController);
 router.post("/all-scrape", allScrapeController);
 
 export default router;
