@@ -1,12 +1,19 @@
 // index.js
 import express from "express";
+import cors from "cors";
 import router from "./route.js";
 
 const app = express();
 
+app.use(cors({
+  origin: "http://localhost:3000",
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  // credentials: true, // only if you use cookies/auth
+}));
+
 app.use(express.json());
 
-// সব route এখন root এ, যেমন /resolve, /search
 app.use("/", router);
 
 app.get("/", (req, res) => {
@@ -14,7 +21,6 @@ app.get("/", (req, res) => {
 });
 
 const PORT = process.env.PORT || 2000;
-
 app.listen(PORT, () => {
   console.log(`Resolver API running at http://localhost:${PORT}`);
 });
