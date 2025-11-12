@@ -1,21 +1,54 @@
-// src/App.jsx
 import { useState } from "react";
 import ScrapeForm from "./components/ScrapeForm.jsx";
 import AllScrapeForm from "./components/AllScrapeForm.jsx";
 
+function NavButton({ active, onClick, children }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full text-left rounded-lg px-3 py-2 text-sm transition
+        ${active ? "bg-emerald-500 text-slate-900" : "bg-slate-800/60 text-slate-200 hover:bg-slate-800"}`}
+    >
+      {children}
+    </button>
+  );
+}
+
 export default function App() {
+  const [active, setActive] = useState("scrape"); // "scrape" | "all"
+
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100">
-      <div className="mx-auto max-w-4xl px-4 py-6">
-        <h1 className="mb-2 text-2xl font-semibold">News Scraper</h1>
-        <p className="mb-6 text-sm text-slate-400">
-          Backend running on <span className="font-mono text-emerald-300">http://localhost:2000</span>
-        </p>
+      <div className="mx-auto flex max-w-6xl gap-4 px-4 py-6">
 
-        <div className="grid gap-6 md:grid-cols-2">
-          <ScrapeForm />
-          <AllScrapeForm />
-        </div>
+        {/* Sidebar */}
+        <aside className="w-56 shrink-0">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+            <h1 className="mb-3 text-lg font-semibold">News Scraper</h1>
+            <div className="space-y-2">
+              <NavButton active={active === "scrape"} onClick={() => setActive("scrape")}>
+                Scrape
+              </NavButton>
+              <NavButton active={active === "all"} onClick={() => setActive("all")}>
+                All Scrap
+              </NavButton>
+            </div>
+
+            <div className="mt-6 rounded-lg bg-slate-800/40 p-3 text-[11px] leading-5">
+              <div className="text-slate-300">API</div>
+              <div className="font-mono text-emerald-300">http://localhost:2000</div>
+            </div>
+          </div>
+        </aside>
+
+        {/* Main content */}
+        <main className="flex-1 min-w-0">
+          {active === "scrape" ? (
+            <ScrapeForm />
+          ) : (
+            <AllScrapeForm />
+          )}
+        </main>
       </div>
     </div>
   );

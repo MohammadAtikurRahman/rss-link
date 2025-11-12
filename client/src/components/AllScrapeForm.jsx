@@ -9,7 +9,7 @@ export default function AllScrapeForm() {
   const [limit, setLimit] = useState(200);
   const [fromYear, setFromYear] = useState(2001);
   const [toYear, setToYear] = useState(2025);
-  const [name, setName] = useState("hasina-2001-2025");
+  const [name, setName] = useState("Scrape-Batch");
 
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
@@ -116,6 +116,7 @@ export default function AllScrapeForm() {
           <input
             className="w-full rounded border border-slate-600 bg-slate-900 px-2 py-1 text-xs outline-none focus:border-emerald-400"
             value={name}
+            placeholder="Save File Name"
             onChange={(e) => setName(e.target.value)}
           />
         </div>
