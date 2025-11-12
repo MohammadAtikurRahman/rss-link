@@ -1,6 +1,7 @@
 import { useState } from "react";
 import ScrapeForm from "./components/ScrapeForm.jsx";
 import AllScrapeForm from "./components/AllScrapeForm.jsx";
+import DataView from "./components/DataView.jsx"; // 👈 NEW
 
 function NavButton({ active, onClick, children }) {
   return (
@@ -15,7 +16,7 @@ function NavButton({ active, onClick, children }) {
 }
 
 export default function App() {
-  const [active, setActive] = useState("scrape"); // "scrape" | "all"
+  const [active, setActive] = useState("scrape"); // "scrape" | "all" | "dataview"
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100">
@@ -32,6 +33,9 @@ export default function App() {
               <NavButton active={active === "all"} onClick={() => setActive("all")}>
                 All Scrap
               </NavButton>
+              <NavButton active={active === "dataview"} onClick={() => setActive("dataview")}>
+                Data View
+              </NavButton>
             </div>
 
             <div className="mt-6 rounded-lg bg-slate-800/40 p-3 text-[11px] leading-5">
@@ -43,11 +47,9 @@ export default function App() {
 
         {/* Main content */}
         <main className="flex-1 min-w-0">
-          {active === "scrape" ? (
-            <ScrapeForm />
-          ) : (
-            <AllScrapeForm />
-          )}
+          {active === "scrape" && <ScrapeForm />}
+          {active === "all" && <AllScrapeForm />}
+          {active === "dataview" && <DataView />}   {/* 👈 NEW */}
         </main>
       </div>
     </div>
